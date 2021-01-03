@@ -1,70 +1,115 @@
-/* 
-    ********************************************************************
-    Odsek:          Elektrotehnika i racunarstvo
-    Departman:      Racunarstvo i automatika
-    Katedra:        Racunarska tehnika i racunarske komunikacije (RT-RK)
-    Predmet:        Osnovi Racunarskih Mreza 1
-    Godina studija: Treca (III)
-    Skolska godina: 2020
-    Semestar:       Zimski (V)
-    
-    Ime fajla:      client.c
-    Opis:           TCP/IP klijent
-    
-    Platforma:      Raspberry Pi 2 - Model B
-    OS:             Raspbian
-    ********************************************************************
-*/
+#include <arpa/inet.h>  //inet_addr
+#include <fcntl.h>      //for open
+#include <stdio.h>      //printf
+#include <string.h>     //strlen
+#include <sys/socket.h> //socket
+#include <unistd.h>     //for close
+#include "defines.h"
 
-#include<stdio.h>      //printf
-#include<string.h>     //strlen
-#include<sys/socket.h> //socket
-#include<arpa/inet.h>  //inet_addr
-#include <fcntl.h>     //for open
-#include <unistd.h>    //for close
+void print_board(char* board, char player) {
+    // Clear screen
+    printf("\e[1;1H\e[2J");
 
-#define DEFAULT_BUFLEN 512
-#define DEFAULT_PORT   27015
+    printf("== You are: %c ==\n\n", player);
+    printf("\t%c|%c|%c\n", board[6], board[7], board[8]);
+    printf("\t-+-+-\n");
+    printf("\t%c|%c|%c\n", board[3], board[4], board[5]);
+    printf("\t-+-+-\n");
+    printf("\t%c|%c|%c\n", board[0], board[1], board[2]);
+}
 
-int main(int argc , char *argv[])
-{
+int main(int argc, char *argv[]) {
     int sock;
     struct sockaddr_in server;
-    char *message = "this is a test";
+    char recv_buffer[DEFAULT_LEN];
+    char playerSymbol;
+    unsigned char playerChoice;
+    char board[9] = { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
 
     //Create socket
-    sock = socket(AF_INET , SOCK_STREAM , 0);
-    if (sock == -1)
-    {
-        printf("Could not create socket");
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == -1) {
+        fprintf(stderr, "Could not create socket\n");
+        return 1;
     }
-    puts("Socket created");
 
     server.sin_addr.s_addr = inet_addr("127.0.0.1");
     server.sin_family = AF_INET;
     server.sin_port = htons(DEFAULT_PORT);
 
     //Connect to remote server
-    if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
-    {
-        perror("connect failed. Error");
+    printf("Connecting to remote server...\n");
+    if (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
+        perror("Connect failed. Error");
+        close(sock);
         return 1;
     }
+    printf("Connected\n");
 
-    puts("Connected\n");
+    printf("Waiting for the other player...\n");
 
-    //Send some data
-    if( send(sock , message , strlen(message), 0) < 0)
-    {
-        puts("Send failed");
+    // Receive the start signal
+    if (recv(sock, recv_buffer, START_LEN, 0) != START_LEN || recv_buffer[0] != 'S' || 
+    (recv_buffer[1] != 'X' && recv_buffer[1] != 'O')) {
+        fprintf(stderr, "Invalid start signal from server\n");
+        close(sock);
         return 1;
     }
+    playerSymbol = recv_buffer[1];
 
-    puts("Client message:");
-    puts(message);
+    if (playerSymbol == SYMBOL_X) {
+        recv_buffer[0] = MESSAGE_PLAY;
+    } else {
+        print_board(board, playerSymbol);
+        printf("Waiting for player X ...\n");
+
+        if (recv(sock, recv_buffer, DEFAULT_LEN, 0) != DEFAULT_LEN) {
+            fprintf(stderr, "Invalid message length from server\n");
+            close(sock);
+            return 1;
+        }
+        for (int i = 0; i < 9; i++) {
+            board[i] = recv_buffer[i + 1];
+        }
+    }
+
+    // Game loop
+    while (recv_buffer[0] != 'W' && recv_buffer[0] != 'L') {
+        if (recv_buffer[0] != 'P') {
+            fprintf(stderr, "Invalid message header from server\n");
+            close(sock);
+            return 1;
+        }
+
+        print_board(board, playerSymbol);
+        printf("Your turn: \n");
+
+        // Get player choice
+        while (playerChoice == 0 || playerChoice > 9) {
+            scanf("%hhu\n", &playerChoice);
+        }
+        if (send(sock, &playerChoice, 1, 0) < 0) {
+            fprintf(stderr, "Send failed\n");
+            close(sock);
+            return 1;
+        }
+
+        printf("Waiting for player %c ...\n", (playerSymbol == SYMBOL_X) ? SYMBOL_O : SYMBOL_X);
+
+        if (recv(sock, recv_buffer, DEFAULT_LEN, 0) != DEFAULT_LEN) {
+            fprintf(stderr, "Invalid message length from server\n");
+            close(sock);
+            return 1;
+        }
+        for (int i = 0; i < 9; i++) {
+            board[i] = recv_buffer[i + 1];
+        }
+    }
+
+    print_board(board, playerSymbol);
+    printf("You %s!\n", (recv_buffer[0] == MESSAGE_WIN) ? "won" : "lost");
 
     close(sock);
 
     return 0;
 }
-
