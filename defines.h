@@ -11,3 +11,4 @@
 #define MESSAGE_PLAY 'P'
 #define MESSAGE_WIN 'W'
 #define MESSAGE_LOSE 'L'
+#define MESSAGE_TIE 'T'

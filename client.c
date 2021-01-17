@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Game loop
-    while (recv_buffer[0] != 'W' && recv_buffer[0] != 'L') {
+    while (recv_buffer[0] != 'W' && recv_buffer[0] != 'L' && recv_buffer[0] != 'T') {
         if (recv_buffer[0] != 'P') {
             fprintf(stderr, "Invalid message header from server\n");
             close(sock);
@@ -107,9 +107,20 @@ int main(int argc, char *argv[]) {
     }
 
     print_board(board, playerSymbol);
-    printf("You %s!\n", (recv_buffer[0] == MESSAGE_WIN) ? "won" : "lost");
+    switch (recv_buffer[0]) {
+        case MESSAGE_WIN:
+            printf("You won!\n");
+            break;
+        case MESSAGE_LOSE:
+            printf("You lost!\n");
+            break;
+        case MESSAGE_TIE:
+            printf("It's a tie!\n");
+            break;
+        default:
+            break;
+    }
 
     close(sock);
-
     return 0;
 }
