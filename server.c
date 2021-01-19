@@ -1,38 +1,73 @@
-/* 
-    ********************************************************************
-    Odsek:          Elektrotehnika i racunarstvo
-    Departman:      Racunarstvo i automatika
-    Katedra:        Racunarska tehnika i racunarske komunikacije (RT-RK)
-    Predmet:        Osnovi Racunarskih Mreza 1
-    Godina studija: Treca (III)
-    Skolska godina: 2020
-    Semestar:       Zimski (V)
-    
-    Ime fajla:      server.c
-    Opis:           TCP/IP server
-    
-    Platforma:      Raspberry Pi 2 - Model B
-    OS:             Raspbian
-    ********************************************************************
-*/
+#include <arpa/inet.h>  //inet_addr
+#include <fcntl.h>      //for open
+#include <stdio.h>      //printf
+#include <string.h>     //strlen
+#include <sys/socket.h> //socket
+#include <unistd.h>     //for close
+#include "defines.h"
 
-#include<stdio.h>
-#include<string.h>    //strlen
-#include<sys/socket.h>
-#include<arpa/inet.h> //inet_addr
-#include<unistd.h>    //write
-
-#define DEFAULT_BUFLEN 512
-#define DEFAULT_PORT   27015
-
-int main(int argc , char *argv[])
+char victory(char *board)
 {
-    int socket_desc , client_sock , c , read_size;
-    struct sockaddr_in server , client;
-    char client_message[DEFAULT_BUFLEN];
-   
+    if( (board[0] == SYMBOL_X && board[3] == SYMBOL_X && board[6] == SYMBOL_X) || 
+        (board[1] == SYMBOL_X && board[4] == SYMBOL_X && board[7] == SYMBOL_X) ||
+        (board[2] == SYMBOL_X && board[5] == SYMBOL_X && board[8] == SYMBOL_X) ||
+        (board[2] == SYMBOL_X && board[4] == SYMBOL_X && board[6] == SYMBOL_X) ||
+        (board[0] == SYMBOL_X && board[4] == SYMBOL_X && board[8] == SYMBOL_X) ||
+        (board[0] == SYMBOL_X && board[1] == SYMBOL_X && board[2] == SYMBOL_X) ||
+        (board[3] == SYMBOL_X && board[4] == SYMBOL_X && board[5] == SYMBOL_X) ||
+        (board[6] == SYMBOL_X && board[7] == SYMBOL_X && board[8] == SYMBOL_X)
+    )
+        return SYMBOL_X;
+
+    else if( (board[0] == SYMBOL_O && board[3] == SYMBOL_O && board[6] == SYMBOL_O) || 
+             (board[1] == SYMBOL_O && board[4] == SYMBOL_O && board[7] == SYMBOL_O) ||
+             (board[2] == SYMBOL_O && board[5] == SYMBOL_O && board[8] == SYMBOL_O) ||
+             (board[2] == SYMBOL_O && board[4] == SYMBOL_O && board[6] == SYMBOL_O) ||
+             (board[0] == SYMBOL_O && board[4] == SYMBOL_O && board[8] == SYMBOL_O) ||
+             (board[0] == SYMBOL_O && board[1] == SYMBOL_O && board[2] == SYMBOL_O) ||
+             (board[3] == SYMBOL_O && board[4] == SYMBOL_O && board[5] == SYMBOL_O) ||
+             (board[6] == SYMBOL_O && board[7] == SYMBOL_O && board[8] == SYMBOL_O)
+           )
+        return SYMBOL_O;
+    else
+        return 0;
+}
+
+char draw(char *board)
+{  
+	int i;
+    int brPopunjenihPolja = 0;
+
+    for(i = 0; i < 8; i++)
+    {
+        if(board[i] != ' ')
+            brPopunjenihPolja++;
+    }
+    if(brPopunjenihPolja == 9)
+        return 'T';
+    else
+        return 0;
+}
+
+
+
+int main(int argc, char *argv[])
+{
+    int socket_desc;
+    int client1_sock;
+    int client2_sock;
+    int c;
+    struct sockaddr_in server;
+    struct sockaddr_in client1;
+    struct sockaddr_in client2;
+    char send_buffer1[DEFAULT_LEN];
+    char send_buffer2[DEFAULT_LEN];
+    char board[9] = { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
+    unsigned char playerChoice;
+
+
     //Create socket
-    socket_desc = socket(AF_INET , SOCK_STREAM , 0);
+    socket_desc = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_desc == -1)
     {
         printf("Could not create socket");
@@ -45,46 +80,137 @@ int main(int argc , char *argv[])
     server.sin_port = htons(DEFAULT_PORT);
 
     //Bind
-    if( bind(socket_desc,(struct sockaddr *)&server , sizeof(server)) < 0)
+    if(bind(socket_desc, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
         //print the error message
-        perror("bind failed. Error");
+        perror("Bind failed. Error");
         return 1;
     }
-    puts("bind done");
+    puts("Bind done");
 
     //Listen
-    listen(socket_desc , 3);
+    listen(socket_desc, 2);
 
     //Accept and incoming connection
     puts("Waiting for incoming connections...");
     c = sizeof(struct sockaddr_in);
 
-    //accept connection from an incoming client
-    client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c);
-    if (client_sock < 0)
+    // klijent1:
+
+    //Accept connection from an incoming client
+    client1_sock = accept(socket_desc, (struct sockaddr *)&client1, (socklen_t*)&c);
+    if (client1_sock < 0)
     {
-        perror("accept failed");
+        perror("Accept failed");
         return 1;
     }
     puts("Connection accepted");
 
-    //Receive a message from client
-    while( (read_size = recv(client_sock , client_message , DEFAULT_BUFLEN , 0)) > 0 )
+    send_buffer1[0] = 'S';
+    send_buffer1[1] = 'X';
+
+
+    if(send(socket_desc, send_buffer1, START_LEN, 0) < 0)
     {
-        printf("Bytes received: %d\n", read_size);
+        puts("Send failed");
+        return 1;
     }
 
-    if(read_size == 0)
+
+    if(recv(socket_desc, &playerChoice, 1, 0) != 1)
     {
-        puts("Client disconnected");
-        fflush(stdout);
-    }
-    else if(read_size == -1)
-    {
-        perror("recv failed");
+        fprintf(stderr, "Invalid message length from client\n");
+        close(socket_desc);
+        return 1;
     }
 
+    board[playerChoice] = SYMBOL_X;
+
+
+    if(victory(board))
+        send_buffer1[0] = victory(board);
+    else if(draw(board))
+        send_buffer1[0] = draw(board);
+    else
+        send_buffer1[0] = 'P';
+
+    
+    for (int i = 0; i < 9; i++) {
+        send_buffer1[i + 1] = board[i];
+	}
+	
+    if(send(socket_desc, send_buffer1, DEFAULT_LEN, 0) < 0)
+    {
+        puts("Send failed");
+        return 1;
+    }
+
+
+    // klijent2:
+
+    //Accept connection from an incoming client
+    client2_sock = accept(socket_desc, (struct sockaddr *)&client2, (socklen_t*)&c);
+    if (client2_sock < 0)
+    {
+        perror("Accept failed");
+        return 1;
+    }
+    puts("Connection accepted"); 
+
+    send_buffer2[0] = 'P';
+    send_buffer2[1] = 'O';
+   
+    if(send(socket_desc, send_buffer2, START_LEN, 0) < 0)
+    {
+        puts("Send failed");
+        return 1;
+    }
+
+
+    send_buffer2[0] = 'P';
+
+    for (int i = 0; i < 9; i++) {
+        send_buffer2[i + 1] = board[i];
+	}
+	
+    if(send(socket_desc, send_buffer2, DEFAULT_LEN, 0) < 0)
+    {
+        puts("Send failed");
+        return 1;
+    }
+
+
+    if(recv(socket_desc, &playerChoice, 1, 0) != 1)
+    {
+        fprintf(stderr, "Invalid message length from client\n");
+        close(socket_desc);
+        return 1;
+    }
+
+    board[playerChoice] = SYMBOL_O;
+
+
+    if(victory(board))
+        send_buffer1[0] = victory(board);
+    else if(draw(board))
+        send_buffer1[0] = draw(board);
+    else
+        send_buffer1[0] = 'P';
+
+    
+    for (int i = 0; i < 9; i++) {
+        send_buffer2[i + 1] = board[i];
+	}
+	
+    if(send(socket_desc, send_buffer2, DEFAULT_LEN, 0) < 0)
+    {
+        puts("Send failed");
+        return 1;
+    }
+
+
+    close(socket_desc);
     return 0;
+
 }
 
