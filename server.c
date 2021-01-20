@@ -36,7 +36,7 @@ char draw(char *board)
     int i;
     int brPopunjenihPolja = 0;
 
-    for (i = 0; i < 9; i++)
+    for (i = 0; i < 8; i++)
     {
         if (board[i] != EMPTY)
             brPopunjenihPolja++;
@@ -152,8 +152,6 @@ int main(int argc, char *argv[])
 
         if (victory(board))
         {
-			char playerXState;
-			char playerOState;
             for (int i = 0; i < 9; i++)
             {
                 send_buffer[i + 1] = board[i];
@@ -161,30 +159,41 @@ int main(int argc, char *argv[])
 
             if (victory(board) == SYMBOL_X)
             {
-                playerXState = MESSAGE_WIN;
-                playerOState = MESSAGE_LOSE;
-			}
-            else
-            {
-                playerXState = MESSAGE_LOSE;
-                playerOState = MESSAGE_WIN;
-			}
+                send_buffer[0] = MESSAGE_WIN;
+                if (send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+                {
+                    puts("Send failed");
+                    close(socket_desc);
+                    return 1;
+                }
 
-            send_buffer[0] = playerXState;
+                send_buffer[0] = MESSAGE_LOSE;
+                if (send(client2_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+                {
+                    puts("Send failed");
+                    close(socket_desc);
+                    return 1;
+                }
 
-            if (send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
-            {
-                puts("Send failed");
-                close(socket_desc);
-                return 1;
             }
-
-            send_buffer[0] = playerOState;
-            if (send(client2_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+            else if (victory(board) == 'O')
             {
-                puts("Send failed");
-                close(socket_desc);
-                return 1;
+                send_buffer[0] = MESSAGE_WIN;
+                if (send(client2_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+                {
+                    puts("Send failed");
+                    close(socket_desc);
+                    return 1;
+                }
+                
+                send_buffer[0] = MESSAGE_LOSE;
+                if (send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+                {
+                    puts("Send failed");
+                    close(socket_desc);
+                    return 1;
+                }
+
             }
             break;
         }
