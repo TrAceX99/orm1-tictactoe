@@ -11,7 +11,7 @@
 // Client socket
 int sock;
 
-void print_board(char* board, char player) {
+void PrintBoard(char* board, char player) {
     // Clear screen
     printf("\e[1;1H\e[2J");
 
@@ -23,7 +23,7 @@ void print_board(char* board, char player) {
     printf("\t%c|%c|%c\n", board[0], board[1], board[2]);
 }
 
-void interruptHandler(int a) {
+void InterruptHandler(int a) {
     printf(" Exiting...\n");
     close(sock);
     exit(0);
@@ -31,13 +31,13 @@ void interruptHandler(int a) {
 
 int main(int argc, char *argv[]) {
     struct sockaddr_in server;
-    char recv_buffer[DEFAULT_LEN];
+    char recvBuffer[DEFAULT_LEN];
     char playerSymbol;
     unsigned char playerChoice;
     char board[9] = { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
 
     // Catch SIGINT
-    signal(SIGINT, interruptHandler);
+    signal(SIGINT, InterruptHandler);
 
     //Create socket
     sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -71,39 +71,39 @@ int main(int argc, char *argv[]) {
     printf("Waiting for the other player...\n");
 
     // Receive the start signal
-    if (recv(sock, recv_buffer, START_LEN, 0) != START_LEN || recv_buffer[0] != 'S' || 
-    (recv_buffer[1] != 'X' && recv_buffer[1] != 'O')) {
+    if (recv(sock, recvBuffer, START_LEN, 0) != START_LEN || recvBuffer[0] != 'S' || 
+    (recvBuffer[1] != 'X' && recvBuffer[1] != 'O')) {
         fprintf(stderr, "Invalid start signal from server\n");
         close(sock);
         return 1;
     }
-    playerSymbol = recv_buffer[1];
+    playerSymbol = recvBuffer[1];
 
     if (playerSymbol == SYMBOL_X) {
-        recv_buffer[0] = MESSAGE_PLAY;
+        recvBuffer[0] = MESSAGE_PLAY;
     } else {
-        print_board(board, playerSymbol);
+        PrintBoard(board, playerSymbol);
         printf("Waiting for player X ...\n");
 
-        if (recv(sock, recv_buffer, DEFAULT_LEN, 0) != DEFAULT_LEN) {
+        if (recv(sock, recvBuffer, DEFAULT_LEN, 0) != DEFAULT_LEN) {
             fprintf(stderr, "Invalid message length from server\n");
             close(sock);
             return 1;
         }
         for (int i = 0; i < 9; i++) {
-            board[i] = recv_buffer[i + 1];
+            board[i] = recvBuffer[i + 1];
         }
     }
 
     // Game loop
-    while (recv_buffer[0] != 'W' && recv_buffer[0] != 'L' && recv_buffer[0] != 'T') {
-        if (recv_buffer[0] != 'P') {
+    while (recvBuffer[0] != 'W' && recvBuffer[0] != 'L' && recvBuffer[0] != 'T') {
+        if (recvBuffer[0] != 'P') {
             fprintf(stderr, "Invalid message header from server\n");
             close(sock);
             return 1;
         }
 
-        print_board(board, playerSymbol);
+        PrintBoard(board, playerSymbol);
         printf("Your turn: \n");
 
         // Get player choice
@@ -118,18 +118,18 @@ int main(int argc, char *argv[]) {
 
         printf("Waiting for player %c ...\n", (playerSymbol == SYMBOL_X) ? SYMBOL_O : SYMBOL_X);
 
-        if (recv(sock, recv_buffer, DEFAULT_LEN, 0) != DEFAULT_LEN) {
+        if (recv(sock, recvBuffer, DEFAULT_LEN, 0) != DEFAULT_LEN) {
             fprintf(stderr, "Invalid message length from server\n");
             close(sock);
             return 1;
         }
         for (int i = 0; i < 9; i++) {
-            board[i] = recv_buffer[i + 1];
+            board[i] = recvBuffer[i + 1];
         }
     }
 
-    print_board(board, playerSymbol);
-    switch (recv_buffer[0]) {
+    PrintBoard(board, playerSymbol);
+    switch (recvBuffer[0]) {
         case MESSAGE_WIN:
             printf("You won!\n");
             break;
