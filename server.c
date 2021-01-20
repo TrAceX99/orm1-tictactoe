@@ -36,13 +36,13 @@ char draw(char *board)
     int i;
     int brPopunjenihPolja = 0;
 
-    for (i = 0; i < 9; i++)
+    for (i = 0; i < 8; i++)
     {
-        if (board[i] != ' ')
+        if (board[i] != EMPTY)
             brPopunjenihPolja++;
     }
     if (brPopunjenihPolja == 9)
-        return 'T';
+        return MESSAGE_TIE;
     else
         return 0;
 }
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in client1;
     struct sockaddr_in client2;
     char send_buffer[DEFAULT_LEN];
-    char board[9] = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
+    char board[9] = {EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY};
     unsigned char playerChoice;
 
     //Create socket
@@ -90,8 +90,6 @@ int main(int argc, char *argv[])
     //Listen
     listen(socket_desc, 2);
 
-    // Start signals
-
     //Accept and incoming connection
     puts("Waiting for incoming connections...");
     c = sizeof(struct sockaddr_in);
@@ -116,8 +114,10 @@ int main(int argc, char *argv[])
     }
     puts("Connection accepted");
 
-    send_buffer[0] = 'S';
-    send_buffer[1] = 'X';
+    // Send start signals
+
+    send_buffer[0] = MESSAGE_START;
+    send_buffer[1] = SYMBOL_X;
 
     if (send(client1_sock, send_buffer, START_LEN, 0) < 0)
     {
@@ -126,8 +126,8 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    send_buffer[0] = 'S';
-    send_buffer[1] = 'O';
+    send_buffer[0] = MESSAGE_START;
+    send_buffer[1] = SYMBOL_O;
 
     if (send(client2_sock, send_buffer, START_LEN, 0) < 0)
     {
@@ -159,15 +159,15 @@ int main(int argc, char *argv[])
                 send_buffer[i + 1] = board[i];
             }
 
-            if (victory(board) == 'X')
+            if (victory(board) == SYMBOL_X)
             {
-                playerXState = 'W';
-                playerOState = 'L';
+                playerXState = MESSAGE_WIN;
+                playerOState = MESSAGE_LOSE;
 			}
             else
             {
-                playerXState = 'L';
-                playerOState = 'W';
+                playerXState = MESSAGE_LOSE;
+                playerOState = MESSAGE_WIN;
 			}
 
             send_buffer[0] = playerXState;
@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
                 send_buffer[i + 1] = board[i];
             }
 
-            send_buffer[0] = 'T';
+            send_buffer[0] = MESSAGE_TIE;
 
             if (send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
             {
@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
             break;
         }
         else
-            send_buffer[0] = 'P';
+            send_buffer[0] = MESSAGE_PLAY;
 
         for (int i = 0; i < 9; i++)
         {
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
         else if (draw(board))
             break;
         else
-            send_buffer[0] = 'P';
+            send_buffer[0] = MESSAGE_PLAY;
 
         for (int i = 0; i < 9; i++)
         {
