@@ -152,48 +152,35 @@ int main(int argc, char *argv[])
 
         if (victory(board))
         {
+			char playerXState;
+			char playerOState;
             for (int i = 0; i < 9; i++)
             {
                 send_buffer[i + 1] = board[i];
             }
-
             if (victory(board) == SYMBOL_X)
             {
-                send_buffer[0] = MESSAGE_WIN;
-                if (send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
-                {
-                    puts("Send failed");
-                    close(socket_desc);
-                    return 1;
-                }
-
-                send_buffer[0] = MESSAGE_LOSE;
-                if (send(client2_sock, send_buffer, DEFAULT_LEN, 0) < 0)
-                {
-                    puts("Send failed");
-                    close(socket_desc);
-                    return 1;
-                }
-
-            }
-            else if (victory(board) == 'O')
+                playerXState = MESSAGE_WIN;
+                playerOState = MESSAGE_LOSE;
+			}
+            else
             {
-                send_buffer[0] = MESSAGE_WIN;
-                if (send(client2_sock, send_buffer, DEFAULT_LEN, 0) < 0)
-                {
-                    puts("Send failed");
-                    close(socket_desc);
-                    return 1;
-                }
-                
-                send_buffer[0] = MESSAGE_LOSE;
-                if (send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
-                {
-                    puts("Send failed");
-                    close(socket_desc);
-                    return 1;
-                }
-
+                playerXState = MESSAGE_LOSE;
+                playerOState = MESSAGE_WIN;
+			}
+            send_buffer[0] = playerXState;
+            if (send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+            {
+                puts("Send failed");
+                close(socket_desc);
+                return 1;
+            }
+            send_buffer[0] = playerOState;
+            if (send(client2_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+            {
+                puts("Send failed");
+                close(socket_desc);
+                return 1;
             }
             break;
         }
@@ -245,9 +232,62 @@ int main(int argc, char *argv[])
         board[playerChoice - 1] = SYMBOL_O;
 
         if (victory(board))
+        {
+			char playerXState;
+			char playerOState;
+            for (int i = 0; i < 9; i++)
+            {
+                send_buffer[i + 1] = board[i];
+            }
+            if (victory(board) == SYMBOL_O)
+            {
+                playerOState = MESSAGE_WIN;
+                playerXState = MESSAGE_LOSE;
+			}
+            else
+            {
+                playerOState = MESSAGE_LOSE;
+                playerXState = MESSAGE_WIN;
+			}
+            send_buffer[0] = playerXState;
+            if (send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+            {
+                puts("Send failed");
+                close(socket_desc);
+                return 1;
+            }
+            send_buffer[0] = playerOState;
+            if (send(client2_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+            {
+                puts("Send failed");
+                close(socket_desc);
+                return 1;
+            }
             break;
+        }
         else if (draw(board))
+        {
+            for (int i = 0; i < 9; i++)
+            {
+                send_buffer[i + 1] = board[i];
+            }
+
+            send_buffer[0] = MESSAGE_TIE;
+
+            if (send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+            {
+                puts("Send failed");
+                close(socket_desc);
+                return 1;
+            }
+            if (send(client2_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+            {
+                puts("Send failed");
+                close(socket_desc);
+                return 1;
+            }
             break;
+        }
         else
             send_buffer[0] = MESSAGE_PLAY;
 
