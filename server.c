@@ -36,7 +36,7 @@ char draw(char *board)
     int i;
     int brPopunjenihPolja = 0;
 
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < 9; i++)
     {
         if (board[i] != EMPTY)
             brPopunjenihPolja++;
