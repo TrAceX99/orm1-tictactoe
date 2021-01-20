@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     }
     printf("Connected\n");
 
-    printf("Waiting for the other player...\n");
+    printf("Waiting for the other player to connect...\n");
 
     // Receive the start signal
     if (recv(sock, recvBuffer, START_LEN, 0) != START_LEN || recvBuffer[0] != 'S' || 
@@ -108,8 +108,11 @@ int main(int argc, char *argv[]) {
 
         // Get player choice
         while (playerChoice == 0 || playerChoice > 9) {
-            scanf("%hhu\n", &playerChoice);
+            scanf("%hhu", &playerChoice);
         }
+        // TODO check if valid
+        board[playerChoice - 1] = playerSymbol;
+        PrintBoard(board, playerSymbol);
         if (send(sock, &playerChoice, 1, 0) < 0) {
             fprintf(stderr, "Send failed\n");
             close(sock);

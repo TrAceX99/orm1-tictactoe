@@ -106,16 +106,6 @@ int main(int argc, char *argv[])
     }
     puts("Connection accepted");
 
-    send_buffer[0] = 'S';
-    send_buffer[1] = 'X';
-
-    if(send(, send_buffer, START_LEN, 0) < 0)
-    {
-        puts("Send failed");
-        return 1;
-    }
-
-
     //Accept connection from an incoming client
     client2_sock = accept(socket_desc, (struct sockaddr *)&client2, (socklen_t*)&c);
     if (client2_sock < 0)
@@ -126,9 +116,18 @@ int main(int argc, char *argv[])
     puts("Connection accepted"); 
 
     send_buffer[0] = 'S';
+    send_buffer[1] = 'X';
+
+    if(send(client1_sock, send_buffer, START_LEN, 0) < 0)
+    {
+        puts("Send failed");
+        return 1;
+    }
+
+    send_buffer[0] = 'S';
     send_buffer[1] = 'O';
    
-    if(send(socket_desc, send_buffer, START_LEN, 0) < 0)
+    if(send(client2_sock, send_buffer, START_LEN, 0) < 0)
     {
         puts("Send failed");
         return 1;
@@ -189,7 +188,7 @@ int main(int argc, char *argv[])
             send_buffer[i + 1] = board[i];
         }
 
-        if(send(client2_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+        if(send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
         {
             puts("Send failed");
             return 1;
