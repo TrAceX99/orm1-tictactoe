@@ -4,7 +4,12 @@
 #include <string.h>     //strlen
 #include <sys/socket.h> //socket
 #include <unistd.h>     //for close
+#include <signal.h>
+#include <stdlib.h>
 #include "defines.h"
+
+// Client socket
+int sock;
 
 void print_board(char* board, char player) {
     // Clear screen
@@ -18,13 +23,21 @@ void print_board(char* board, char player) {
     printf("\t%c|%c|%c\n", board[0], board[1], board[2]);
 }
 
+void interruptHandler(int a) {
+    printf(" Exiting...\n");
+    close(sock);
+    exit(0);
+}
+
 int main(int argc, char *argv[]) {
-    int sock;
     struct sockaddr_in server;
     char recv_buffer[DEFAULT_LEN];
     char playerSymbol;
     unsigned char playerChoice;
     char board[9] = { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
+
+    // Catch SIGINT
+    signal(SIGINT, interruptHandler);
 
     //Create socket
     sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -33,7 +46,16 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+    // Get IP address from user
+    char addrBuffer[ADDR_STRING_MAX_LEN];
+    printf("Enter the server IP address: ");
+    fgets(addrBuffer, ADDR_STRING_MAX_LEN, stdin);
+    addrBuffer[strlen(addrBuffer) - 1] = 0;
+
+    if (inet_aton(addrBuffer, (struct in_addr *)&server.sin_addr.s_addr) == 0) {
+        printf("Invalid IP address! Defaulting to 127.0.0.1\n");
+        server.sin_addr.s_addr = inet_addr("127.0.0.1");
+    }
     server.sin_family = AF_INET;
     server.sin_port = htons(DEFAULT_PORT);
 

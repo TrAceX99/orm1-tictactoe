@@ -3,6 +3,8 @@
 #define START_LEN 2
 #define DEFAULT_LEN 10
 
+#define ADDR_STRING_MAX_LEN 16
+
 #define EMPTY ' '
 #define SYMBOL_X 'X'
 #define SYMBOL_O 'O'
