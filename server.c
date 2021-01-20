@@ -152,17 +152,23 @@ int main(int argc, char *argv[])
 
         if (victory(board))
         {
+			char playerXState;
+			char playerOState;
             for (int i = 0; i < 9; i++)
             {
                 send_buffer[i + 1] = board[i];
             }
 
             if (victory(board) == 'X')
+            {
                 playerXState = 'W';
                 playerOState = 'L';
+			}
             else
+            {
                 playerXState = 'L';
                 playerOState = 'W';
+			}
 
             send_buffer[0] = playerXState;
 
