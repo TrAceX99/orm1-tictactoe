@@ -116,18 +116,16 @@ int main(int argc, char *argv[]) {
         }
 
         PrintBoard(board, playerSymbol);
-        printf("Your turn: \n");
+        printf("Your turn\n");
 
         // Get player choice
         unsigned char playerChoice;
-        // Purge the input buffer
-        while(scanf("%c", &playerChoice));
         while (1) {
             playerChoice = getchar() - '0';
             if (playerChoice == 0 || playerChoice > 9) {
-                printf("Invalid input \'%c\'!\n", playerChoice + '0');
+                printf("\e[2K\rInvalid input \'%c\'!", playerChoice + '0');
             } else if (board[playerChoice - 1] != ' ') {
-                printf("Field %d occupied!\n", playerChoice);
+                printf("\e[2K\rField %d occupied!", playerChoice);
             } else {
                 break;
             }
