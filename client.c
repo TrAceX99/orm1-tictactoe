@@ -6,25 +6,29 @@
 #include <unistd.h>     //for close
 #include <signal.h>
 #include <stdlib.h>
+#include <termios.h>
 #include "defines.h"
 
 // Client socket
 int sock;
+static struct termios oldt, newt;
 
 void PrintBoard(char* board, char player) {
     // Clear screen
     printf("\e[1;1H\e[2J");
 
-    printf("== You are: %c ==\n\n", player);
+    printf("==== You are: %c ====\n\n", player);
     printf("\t%c|%c|%c\n", board[6], board[7], board[8]);
     printf("\t-+-+-\n");
     printf("\t%c|%c|%c\n", board[3], board[4], board[5]);
     printf("\t-+-+-\n");
-    printf("\t%c|%c|%c\n", board[0], board[1], board[2]);
+    printf("\t%c|%c|%c\n\n", board[0], board[1], board[2]);
 }
 
-void InterruptHandler(int a) {
+void Exit(int a) {
     printf(" Exiting...\n");
+    // Restore the old terminal settings
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
     close(sock);
     exit(0);
 }
@@ -33,11 +37,14 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in server;
     char recvBuffer[DEFAULT_LEN];
     char playerSymbol;
-    unsigned char playerChoice;
     char board[9] = { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
 
+    // Store old terminal settings
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+
     // Catch SIGINT
-    signal(SIGINT, InterruptHandler);
+    signal(SIGINT, Exit);
 
     //Create socket
     sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -63,7 +70,7 @@ int main(int argc, char *argv[]) {
     printf("Connecting to remote server...\n");
     if (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
         perror("Connect failed. Error");
-        close(sock);
+        Exit(0);
         return 1;
     }
     printf("Connected\n");
@@ -74,11 +81,16 @@ int main(int argc, char *argv[]) {
     if (recv(sock, recvBuffer, START_LEN, 0) != START_LEN || recvBuffer[0] != 'S' || 
     (recvBuffer[1] != 'X' && recvBuffer[1] != 'O')) {
         fprintf(stderr, "Invalid start signal from server\n");
-        close(sock);
+        Exit(0);
         return 1;
     }
     playerSymbol = recvBuffer[1];
 
+    // Disable terminal canonical mode and echo
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    // Start game
     if (playerSymbol == SYMBOL_X) {
         recvBuffer[0] = MESSAGE_PLAY;
     } else {
@@ -87,7 +99,7 @@ int main(int argc, char *argv[]) {
 
         if (recv(sock, recvBuffer, DEFAULT_LEN, 0) != DEFAULT_LEN) {
             fprintf(stderr, "Invalid message length from server\n");
-            close(sock);
+            Exit(0);
             return 1;
         }
         for (int i = 0; i < 9; i++) {
@@ -99,7 +111,7 @@ int main(int argc, char *argv[]) {
     while (recvBuffer[0] != 'W' && recvBuffer[0] != 'L' && recvBuffer[0] != 'T') {
         if (recvBuffer[0] != 'P') {
             fprintf(stderr, "Invalid message header from server\n");
-            close(sock);
+            Exit(0);
             return 1;
         }
 
@@ -107,15 +119,24 @@ int main(int argc, char *argv[]) {
         printf("Your turn: \n");
 
         // Get player choice
-        while (playerChoice == 0 || playerChoice > 9) {
-            scanf("%hhu", &playerChoice);
+        unsigned char playerChoice;
+        // Purge the input buffer
+        while(scanf("%c", &playerChoice));
+        while (1) {
+            playerChoice = getchar() - '0';
+            if (playerChoice == 0 || playerChoice > 9) {
+                printf("Invalid input \'%c\'!\n", playerChoice + '0');
+            } else if (board[playerChoice - 1] != ' ') {
+                printf("Field %d occupied!\n", playerChoice);
+            } else {
+                break;
+            }
         }
-        // TODO check if valid
         board[playerChoice - 1] = playerSymbol;
         PrintBoard(board, playerSymbol);
         if (send(sock, &playerChoice, 1, 0) < 0) {
             fprintf(stderr, "Send failed\n");
-            close(sock);
+            Exit(0);
             return 1;
         }
 
@@ -123,7 +144,7 @@ int main(int argc, char *argv[]) {
 
         if (recv(sock, recvBuffer, DEFAULT_LEN, 0) != DEFAULT_LEN) {
             fprintf(stderr, "Invalid message length from server\n");
-            close(sock);
+            Exit(0);
             return 1;
         }
         for (int i = 0; i < 9; i++) {
@@ -146,6 +167,6 @@ int main(int argc, char *argv[]) {
             break;
     }
 
-    close(sock);
+    Exit(0);
     return 0;
 }
