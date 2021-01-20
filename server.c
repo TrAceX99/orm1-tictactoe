@@ -60,8 +60,7 @@ int main(int argc, char *argv[])
     struct sockaddr_in server;
     struct sockaddr_in client1;
     struct sockaddr_in client2;
-    char send_buffer1[DEFAULT_LEN];
-    char send_buffer2[DEFAULT_LEN];
+    char send_buffer[DEFAULT_LEN];
     char board[9] = { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
     unsigned char playerChoice;
 
@@ -88,14 +87,15 @@ int main(int argc, char *argv[])
     }
     puts("Bind done");
 
+
+    // Start signals
+
     //Listen
     listen(socket_desc, 2);
 
     //Accept and incoming connection
     puts("Waiting for incoming connections...");
     c = sizeof(struct sockaddr_in);
-
-    // klijent1:
 
     //Accept connection from an incoming client
     client1_sock = accept(socket_desc, (struct sockaddr *)&client1, (socklen_t*)&c);
@@ -106,47 +106,17 @@ int main(int argc, char *argv[])
     }
     puts("Connection accepted");
 
-    send_buffer1[0] = 'S';
-    send_buffer1[1] = 'X';
+    send_buffer[0] = 'S';
+    send_buffer[1] = 'X';
 
-
-    if(send(socket_desc, send_buffer1, START_LEN, 0) < 0)
+    if(send(socket_desc, send_buffer, START_LEN, 0) < 0)
     {
         puts("Send failed");
         return 1;
     }
 
-
-    if(recv(socket_desc, &playerChoice, 1, 0) != 1)
-    {
-        fprintf(stderr, "Invalid message length from client\n");
-        close(socket_desc);
-        return 1;
-    }
-
-    board[playerChoice] = SYMBOL_X;
-
-
-    if(victory(board))
-        send_buffer1[0] = victory(board);
-    else if(draw(board))
-        send_buffer1[0] = draw(board);
-    else
-        send_buffer1[0] = 'P';
-
-    
-    for (int i = 0; i < 9; i++) {
-        send_buffer1[i + 1] = board[i];
-	}
-	
-    if(send(socket_desc, send_buffer1, DEFAULT_LEN, 0) < 0)
-    {
-        puts("Send failed");
-        return 1;
-    }
-
-
-    // klijent2:
+    //Listen
+    listen(socket_desc, 2);
 
     //Accept connection from an incoming client
     client2_sock = accept(socket_desc, (struct sockaddr *)&client2, (socklen_t*)&c);
@@ -157,23 +127,50 @@ int main(int argc, char *argv[])
     }
     puts("Connection accepted"); 
 
-    send_buffer2[0] = 'P';
-    send_buffer2[1] = 'O';
+    send_buffer[0] = 'S';
+    send_buffer[1] = 'O';
    
-    if(send(socket_desc, send_buffer2, START_LEN, 0) < 0)
+    if(send(socket_desc, send_buffer, START_LEN, 0) < 0)
     {
         puts("Send failed");
         return 1;
     }
 
 
-    send_buffer2[0] = 'P';
+    // Game loop
+
+    while(!draw(board))
+    {
+
+    if(recv(socket_desc, &playerChoice, 1, 0) != 1)
+    {
+        fprintf(stderr, "Invalid message length from client\n");
+        close(socket_desc);
+        return 1;
+    }
+
+    board[playerChoice] = SYMBOL_X;
+
+        // Proveri da li je kraj igre
+        if(victory(board))
+            send_buffer[0] = victory(board);
+        else if(draw(board))
+            send_buffer[0] = draw(board);
+        else
+            send_buffer[0] = 'P';
+
+
+       /* if(send(socket_desc, send_buffer, DEFAULT_LEN, 0) < 0)
+        {
+            puts("Send failed");
+            return 1;
+        } */
 
     for (int i = 0; i < 9; i++) {
-        send_buffer2[i + 1] = board[i];
-	}
-	
-    if(send(socket_desc, send_buffer2, DEFAULT_LEN, 0) < 0)
+        send_buffer[i + 1] = board[i];
+    }
+
+    if(send(socket_desc, send_buffer, DEFAULT_LEN, 0) < 0)
     {
         puts("Send failed");
         return 1;
@@ -191,26 +188,27 @@ int main(int argc, char *argv[])
 
 
     if(victory(board))
-        send_buffer1[0] = victory(board);
+        send_buffer[0] = victory(board);
     else if(draw(board))
-        send_buffer1[0] = draw(board);
+        send_buffer[0] = draw(board);
     else
-        send_buffer1[0] = 'P';
+        send_buffer[0] = 'P';
 
-    
+
     for (int i = 0; i < 9; i++) {
-        send_buffer2[i + 1] = board[i];
+        send_buffer[i + 1] = board[i];
 	}
+
 	
-    if(send(socket_desc, send_buffer2, DEFAULT_LEN, 0) < 0)
+    if(send(socket_desc, send_buffer, DEFAULT_LEN, 0) < 0)
     {
         puts("Send failed");
         return 1;
     }
 
+    }
 
     close(socket_desc);
     return 0;
 
 }
-
