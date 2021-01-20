@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
     {
         //print the error message
         perror("Bind failed. Error");
+        close(socket_desc);
         return 1;
     }
     puts("Bind done");
@@ -102,6 +103,7 @@ int main(int argc, char *argv[])
     if (client1_sock < 0)
     {
         perror("Accept failed");
+        close(socket_desc);
         return 1;
     }
     puts("Connection accepted");
@@ -111,6 +113,7 @@ int main(int argc, char *argv[])
     if (client2_sock < 0)
     {
         perror("Accept failed");
+        close(socket_desc);
         return 1;
     }
     puts("Connection accepted"); 
@@ -121,6 +124,7 @@ int main(int argc, char *argv[])
     if(send(client1_sock, send_buffer, START_LEN, 0) < 0)
     {
         puts("Send failed");
+        close(socket_desc);
         return 1;
     }
 
@@ -130,6 +134,7 @@ int main(int argc, char *argv[])
     if(send(client2_sock, send_buffer, START_LEN, 0) < 0)
     {
         puts("Send failed");
+        close(socket_desc);
         return 1;
     }
 
@@ -163,6 +168,7 @@ int main(int argc, char *argv[])
         if(send(client2_sock, send_buffer, DEFAULT_LEN, 0) < 0)
         {
             puts("Send failed");
+            close(socket_desc);
             return 1;
         }
 
@@ -191,6 +197,7 @@ int main(int argc, char *argv[])
         if(send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
         {
             puts("Send failed");
+            close(socket_desc);
             return 1;
         }
 
