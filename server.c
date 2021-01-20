@@ -73,6 +73,10 @@ int main(int argc, char *argv[])
     }
     puts("Socket created");
 
+    // Set SOREUSEADDR option
+    int option = 1;
+    setsockopt(socket_desc, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+
     //Prepare the sockaddr_in structure
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
@@ -205,5 +209,4 @@ int main(int argc, char *argv[])
 
     close(socket_desc);
     return 0;
-
 }
