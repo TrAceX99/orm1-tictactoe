@@ -8,48 +8,44 @@
 
 char victory(char *board)
 {
-    if( (board[0] == SYMBOL_X && board[3] == SYMBOL_X && board[6] == SYMBOL_X) || 
+    if ((board[0] == SYMBOL_X && board[3] == SYMBOL_X && board[6] == SYMBOL_X) ||
         (board[1] == SYMBOL_X && board[4] == SYMBOL_X && board[7] == SYMBOL_X) ||
         (board[2] == SYMBOL_X && board[5] == SYMBOL_X && board[8] == SYMBOL_X) ||
         (board[2] == SYMBOL_X && board[4] == SYMBOL_X && board[6] == SYMBOL_X) ||
         (board[0] == SYMBOL_X && board[4] == SYMBOL_X && board[8] == SYMBOL_X) ||
         (board[0] == SYMBOL_X && board[1] == SYMBOL_X && board[2] == SYMBOL_X) ||
         (board[3] == SYMBOL_X && board[4] == SYMBOL_X && board[5] == SYMBOL_X) ||
-        (board[6] == SYMBOL_X && board[7] == SYMBOL_X && board[8] == SYMBOL_X)
-    )
+        (board[6] == SYMBOL_X && board[7] == SYMBOL_X && board[8] == SYMBOL_X))
         return SYMBOL_X;
 
-    else if( (board[0] == SYMBOL_O && board[3] == SYMBOL_O && board[6] == SYMBOL_O) || 
+    else if ((board[0] == SYMBOL_O && board[3] == SYMBOL_O && board[6] == SYMBOL_O) ||
              (board[1] == SYMBOL_O && board[4] == SYMBOL_O && board[7] == SYMBOL_O) ||
              (board[2] == SYMBOL_O && board[5] == SYMBOL_O && board[8] == SYMBOL_O) ||
              (board[2] == SYMBOL_O && board[4] == SYMBOL_O && board[6] == SYMBOL_O) ||
              (board[0] == SYMBOL_O && board[4] == SYMBOL_O && board[8] == SYMBOL_O) ||
              (board[0] == SYMBOL_O && board[1] == SYMBOL_O && board[2] == SYMBOL_O) ||
              (board[3] == SYMBOL_O && board[4] == SYMBOL_O && board[5] == SYMBOL_O) ||
-             (board[6] == SYMBOL_O && board[7] == SYMBOL_O && board[8] == SYMBOL_O)
-           )
+             (board[6] == SYMBOL_O && board[7] == SYMBOL_O && board[8] == SYMBOL_O))
         return SYMBOL_O;
     else
         return 0;
 }
 
 char draw(char *board)
-{  
-	int i;
+{
+    int i;
     int brPopunjenihPolja = 0;
 
-    for(i = 0; i < 8; i++)
+    for (i = 0; i < 8; i++)
     {
-        if(board[i] != ' ')
+        if (board[i] != ' ')
             brPopunjenihPolja++;
     }
-    if(brPopunjenihPolja == 9)
+    if (brPopunjenihPolja == 9)
         return 'T';
     else
         return 0;
 }
-
-
 
 int main(int argc, char *argv[])
 {
@@ -61,9 +57,8 @@ int main(int argc, char *argv[])
     struct sockaddr_in client1;
     struct sockaddr_in client2;
     char send_buffer[DEFAULT_LEN];
-    char board[9] = { ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ' };
+    char board[9] = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
     unsigned char playerChoice;
-
 
     //Create socket
     socket_desc = socket(AF_INET, SOCK_STREAM, 0);
@@ -79,7 +74,7 @@ int main(int argc, char *argv[])
     server.sin_port = htons(DEFAULT_PORT);
 
     //Bind
-    if(bind(socket_desc, (struct sockaddr *)&server, sizeof(server)) < 0)
+    if (bind(socket_desc, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
         //print the error message
         perror("Bind failed. Error");
@@ -87,7 +82,6 @@ int main(int argc, char *argv[])
         return 1;
     }
     puts("Bind done");
-
 
     //Listen
     listen(socket_desc, 2);
@@ -99,7 +93,7 @@ int main(int argc, char *argv[])
     c = sizeof(struct sockaddr_in);
 
     //Accept connection from an incoming client
-    client1_sock = accept(socket_desc, (struct sockaddr *)&client1, (socklen_t*)&c);
+    client1_sock = accept(socket_desc, (struct sockaddr *)&client1, (socklen_t *)&c);
     if (client1_sock < 0)
     {
         perror("Accept failed");
@@ -109,19 +103,19 @@ int main(int argc, char *argv[])
     puts("Connection accepted");
 
     //Accept connection from an incoming client
-    client2_sock = accept(socket_desc, (struct sockaddr *)&client2, (socklen_t*)&c);
+    client2_sock = accept(socket_desc, (struct sockaddr *)&client2, (socklen_t *)&c);
     if (client2_sock < 0)
     {
         perror("Accept failed");
         close(socket_desc);
         return 1;
     }
-    puts("Connection accepted"); 
+    puts("Connection accepted");
 
     send_buffer[0] = 'S';
     send_buffer[1] = 'X';
 
-    if(send(client1_sock, send_buffer, START_LEN, 0) < 0)
+    if (send(client1_sock, send_buffer, START_LEN, 0) < 0)
     {
         puts("Send failed");
         close(socket_desc);
@@ -130,80 +124,127 @@ int main(int argc, char *argv[])
 
     send_buffer[0] = 'S';
     send_buffer[1] = 'O';
-   
-    if(send(client2_sock, send_buffer, START_LEN, 0) < 0)
+
+    if (send(client2_sock, send_buffer, START_LEN, 0) < 0)
     {
         puts("Send failed");
         close(socket_desc);
         return 1;
     }
 
-
     // Game loop
 
-    while(1)
+    while (1)
     {
 
-        if(recv(client1_sock, &playerChoice, 1, 0) != 1)
+        if (recv(client1_sock, &playerChoice, 1, 0) != 1)
         {
             fprintf(stderr, "Invalid message length from client\n");
             close(socket_desc);
             return 1;
         }
 
-        board[playerChoice-1] = SYMBOL_X;
+        board[playerChoice - 1] = SYMBOL_X;
 
-        if(victory(board))
+        if (victory(board))
+        {
+            for (int i = 0; i < 9; i++)
+            {
+                send_buffer[i + 1] = board[i];
+            }
+
+            if (victory(board) == 'X')
+                playerXState = 'W';
+                playerOState = 'L';
+            else
+                playerXState = 'L';
+                playerOState = 'W';
+
+            send_buffer[0] = playerXState;
+
+            if (send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+            {
+                puts("Send failed");
+                close(socket_desc);
+                return 1;
+            }
+
+            send_buffer[0] = playerOState;
+            if (send(client2_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+            {
+                puts("Send failed");
+                close(socket_desc);
+                return 1;
+            }
             break;
-        else if(draw(board))
+        }
+        else if (draw(board))
+        {
+            for (int i = 0; i < 9; i++)
+            {
+                send_buffer[i + 1] = board[i];
+            }
+
+            send_buffer[0] = 'T';
+
+            if (send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+            {
+                puts("Send failed");
+                close(socket_desc);
+                return 1;
+            }
+            if (send(client2_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+            {
+                puts("Send failed");
+                close(socket_desc);
+                return 1;
+            }
             break;
+        }
         else
             send_buffer[0] = 'P';
 
-
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 9; i++)
+        {
             send_buffer[i + 1] = board[i];
         }
 
-        if(send(client2_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+        if (send(client2_sock, send_buffer, DEFAULT_LEN, 0) < 0)
         {
             puts("Send failed");
             close(socket_desc);
             return 1;
         }
 
-
-        if(recv(client2_sock, &playerChoice, 1, 0) != 1)
+        if (recv(client2_sock, &playerChoice, 1, 0) != 1)
         {
             fprintf(stderr, "Invalid message length from client\n");
             close(socket_desc);
             return 1;
         }
 
-        board[playerChoice-1] = SYMBOL_O;
+        board[playerChoice - 1] = SYMBOL_O;
 
-        if(victory(board))
+        if (victory(board))
             break;
-        else if(draw(board))
+        else if (draw(board))
             break;
         else
             send_buffer[0] = 'P';
 
-
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 9; i++)
+        {
             send_buffer[i + 1] = board[i];
         }
 
-        if(send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
+        if (send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
         {
             puts("Send failed");
             close(socket_desc);
             return 1;
         }
-
     }
 
     close(socket_desc);
     return 0;
-
 }
