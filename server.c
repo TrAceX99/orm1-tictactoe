@@ -152,8 +152,8 @@ int main(int argc, char *argv[])
 
         if (victory(board))
         {
-			char playerXState;
-			char playerOState;
+            char playerXState;
+            char playerOState;
             for (int i = 0; i < 9; i++)
             {
                 send_buffer[i + 1] = board[i];
@@ -162,12 +162,12 @@ int main(int argc, char *argv[])
             {
                 playerXState = MESSAGE_WIN;
                 playerOState = MESSAGE_LOSE;
-			}
+            }
             else
             {
                 playerXState = MESSAGE_LOSE;
                 playerOState = MESSAGE_WIN;
-			}
+            }
             send_buffer[0] = playerXState;
             if (send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
             {
@@ -233,8 +233,8 @@ int main(int argc, char *argv[])
 
         if (victory(board))
         {
-			char playerXState;
-			char playerOState;
+            char playerXState;
+            char playerOState;
             for (int i = 0; i < 9; i++)
             {
                 send_buffer[i + 1] = board[i];
@@ -243,12 +243,12 @@ int main(int argc, char *argv[])
             {
                 playerOState = MESSAGE_WIN;
                 playerXState = MESSAGE_LOSE;
-			}
+            }
             else
             {
                 playerOState = MESSAGE_LOSE;
                 playerXState = MESSAGE_WIN;
-			}
+            }
             send_buffer[0] = playerXState;
             if (send(client1_sock, send_buffer, DEFAULT_LEN, 0) < 0)
             {
