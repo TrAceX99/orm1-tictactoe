@@ -18,11 +18,11 @@ void PrintBoard(char* board, char player) {
     printf("\e[1;1H\e[2J");
 
     printf("==== You are: %c ====\n\n", player);
-    printf("\t%c|%c|%c\n", board[6], board[7], board[8]);
-    printf("\t-+-+-\n");
-    printf("\t%c|%c|%c\n", board[3], board[4], board[5]);
-    printf("\t-+-+-\n");
-    printf("\t%c|%c|%c\n\n", board[0], board[1], board[2]);
+    printf("   %c|%c|%c   7|8|9\n", board[6], board[7], board[8]);
+    printf("   -+-+-   -+-+-\n");
+    printf("   %c|%c|%c   4|5|6\n", board[3], board[4], board[5]);
+    printf("   -+-+-   -+-+-\n");
+    printf("   %c|%c|%c   1|2|3\n\n", board[0], board[1], board[2]);
 }
 
 void Exit(int a) {
